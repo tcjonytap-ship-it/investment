@@ -577,118 +577,207 @@ export default function Page() {
         <AdBlock className="bg-[#131929] border border-white/5 rounded-2xl p-4 min-h-[90px] flex flex-col items-center justify-center" />
 
         {/* ── Portfolio tracker ── */}
-        <div id="portfolio" className="bg-[#131929] border border-white/6 rounded-2xl p-6 sm:p-8 space-y-5">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-300">Portfolio Tracker</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Track your assets and see your allocation.</p>
-          </div>
+        <div id="portfolio" className="space-y-4">
 
-          {/* Add form */}
-          <div className="grid grid-cols-[1fr_100px_80px_40px] gap-2">
-            <input
-              placeholder="Asset name"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addAsset()}
-              className="bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors"
-            />
-            <input
-              placeholder="$ Amount"
-              type="number"
-              value={newAmt}
-              onChange={e => setNewAmt(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addAsset()}
-              className="bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors"
-            />
-            <input
-              placeholder="% Ret"
-              type="number"
-              value={newRet}
-              onChange={e => setNewRet(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addAsset()}
-              className="bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors"
-            />
-            <button
-              onClick={addAsset}
-              className="bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white font-bold text-lg transition-colors flex items-center justify-center shadow-md shadow-indigo-500/20"
-            >
-              +
-            </button>
-          </div>
+          {/* Header + total */}
+          <div className="bg-[#131929] border border-white/6 rounded-2xl p-6 sm:p-8">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="text-xl font-extrabold text-white">My Investment Portfolio</h2>
+                <p className="text-slate-400 mt-1 text-sm">
+                  Track everything you own in one place.
+                </p>
+              </div>
+              {assets.length > 0 && (
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Total value today</p>
+                  <p className="text-3xl font-extrabold font-mono text-white">{usd(portfolioTotal)}</p>
+                </div>
+              )}
+            </div>
 
-          {/* Asset rows */}
-          <div className="space-y-1.5">
-            {assets.length === 0 && (
-              <p className="text-center text-slate-600 text-sm py-6">No assets yet — add one above.</p>
-            )}
-            {assets.map((a, i) => {
-              const pct = portfolioTotal > 0 ? (a.amount / portfolioTotal) * 100 : 0;
-              return (
-                <div key={a.id} className="flex items-center gap-3 group">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                  />
-                  <span className="flex-1 text-sm font-medium text-white truncate">{a.name}</span>
-                  <span className="text-sm font-mono text-slate-300 hidden sm:block">{usd(a.amount)}</span>
-                  <span className="text-xs font-mono text-emerald-400 w-12 text-right">+{a.annual}%</span>
-                  <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: PIE_COLORS[i % PIE_COLORS.length] }}
-                    />
+            {/* Donut chart + legend */}
+            {mounted && assets.length > 0 && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center gap-6">
+                {/* Chart */}
+                <div className="relative flex-shrink-0 w-44 h-44">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={assets.map(a => ({ name: a.name, value: a.amount }))}
+                        cx="50%" cy="50%"
+                        innerRadius="58%" outerRadius="82%"
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        {assets.map((_, idx) => (
+                          <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        formatter={(v: any) => [usd(Number(v)), 'Value']}
+                        contentStyle={{
+                          background: '#0f172a',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 10,
+                          fontSize: 13,
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Centre label */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Total</p>
+                    <p className="text-base font-extrabold text-white leading-tight">{short(portfolioTotal)}</p>
                   </div>
-                  <span className="text-xs text-slate-500 w-8 text-right">{pct.toFixed(0)}%</span>
+                </div>
+                {/* Legend */}
+                <div className="flex-1 w-full space-y-2.5">
+                  {assets.map((a, i) => {
+                    const pct = portfolioTotal > 0 ? (a.amount / portfolioTotal) * 100 : 0;
+                    return (
+                      <div key={a.id}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                            <span className="text-white font-medium truncate max-w-[160px]">{a.name}</span>
+                          </div>
+                          <span className="text-slate-400 font-mono text-sm">{pct.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%`, background: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {assets.length === 0 && (
+              <div className="mt-6 text-center py-8 border-2 border-dashed border-white/8 rounded-2xl">
+                <p className="text-3xl mb-2">💼</p>
+                <p className="text-slate-400 text-sm">Your portfolio is empty.</p>
+                <p className="text-slate-600 text-xs mt-1">Add your first investment below to get started.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Asset cards */}
+          {assets.map((a, i) => {
+            const pct       = portfolioTotal > 0 ? (a.amount / portfolioTotal) * 100 : 0;
+            const in10yrs   = Math.round(a.amount * Math.pow(1 + a.annual / 100, 10));
+            const gain10    = in10yrs - a.amount;
+            return (
+              <div
+                key={a.id}
+                className="bg-[#131929] border border-white/6 rounded-2xl p-5 sm:p-6"
+                style={{ borderLeftWidth: 4, borderLeftColor: PIE_COLORS[i % PIE_COLORS.length] }}
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-bold text-white truncate">{a.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {pct.toFixed(0)}% of your portfolio
+                    </p>
+                  </div>
                   <button
                     onClick={() => setAssets(p => p.filter(x => x.id !== a.id))}
-                    className="text-slate-700 hover:text-rose-400 transition-colors text-xs opacity-0 group-hover:opacity-100 w-5"
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors"
                   >
-                    ✕
+                    Remove
                   </button>
                 </div>
-              );
-            })}
+
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="bg-white/4 rounded-xl p-3">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">You own</p>
+                    <p className="text-xl font-extrabold font-mono text-white">{usd(a.amount)}</p>
+                  </div>
+                  <div className="bg-white/4 rounded-xl p-3">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Growing at</p>
+                    <p className="text-xl font-extrabold font-mono text-emerald-400">{a.annual}%<span className="text-sm text-slate-500 font-normal"> / year</span></p>
+                  </div>
+                  <div className="bg-white/4 rounded-xl p-3 col-span-2 sm:col-span-1">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Worth in 10 years</p>
+                    <p className="text-xl font-extrabold font-mono text-amber-400">{usd(in10yrs)}</p>
+                    <p className="text-[10px] text-emerald-400 mt-0.5">+{usd(gain10)} profit</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add form */}
+          <div className="bg-[#131929] border border-white/6 rounded-2xl p-6 sm:p-8">
+            <p className="text-base font-bold text-white mb-5">➕ Add an Investment</p>
+            <div className="space-y-4">
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-300">
+                  What are you investing in?
+                </label>
+                <input
+                  placeholder="e.g. S&P 500 ETF, Apple Stock, Bitcoin, Gold..."
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addAsset()}
+                  className="w-full bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl px-4 py-3 text-base text-white placeholder-slate-600 outline-none transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-300">
+                    How much do you have?
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
+                    <input
+                      placeholder="10,000"
+                      type="number"
+                      value={newAmt}
+                      onChange={e => setNewAmt(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addAsset()}
+                      className="w-full bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl pl-9 pr-4 py-3 text-base text-white placeholder-slate-600 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-300">
+                    Expected yearly return?
+                  </label>
+                  <div className="relative">
+                    <input
+                      placeholder="8"
+                      type="number"
+                      value={newRet}
+                      onChange={e => setNewRet(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addAsset()}
+                      className="w-full bg-white/5 border border-white/8 focus:border-indigo-500 rounded-xl pl-4 pr-9 py-3 text-base text-white placeholder-slate-600 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">%</span>
+                  </div>
+                  <p className="text-xs text-slate-600">💡 S&P 500 average = ~10% · Bonds = ~4% · Savings = ~4%</p>
+                </div>
+              </div>
+
+              <button
+                onClick={addAsset}
+                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] rounded-xl text-white font-bold text-base transition-all shadow-lg shadow-indigo-500/20"
+              >
+                Add to My Portfolio
+              </button>
+            </div>
           </div>
-
-          {/* Total + mini pie */}
-          {assets.length > 0 && (
-            <div className="flex items-center justify-between pt-3 border-t border-white/5">
-              <span className="text-sm text-slate-400">Total Portfolio</span>
-              <span className="text-lg font-extrabold font-mono text-white">{usd(portfolioTotal)}</span>
-            </div>
-          )}
-
-          {/* Pie chart */}
-          {mounted && assets.length > 0 && (
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={assets.map(a => ({ name: a.name, value: a.amount }))}
-                    cx="50%" cy="50%"
-                    innerRadius="45%" outerRadius="70%"
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {assets.map((_, idx) => (
-                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    formatter={(v: any) => [usd(Number(v)), 'Value']}
-                    contentStyle={{
-                      background: '#0f172a',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10,
-                      fontSize: 13,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
 
         {/* ── Ad ── */}
