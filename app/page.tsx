@@ -183,19 +183,42 @@ export default function Page() {
   const [tax, setTax]             = useState(0);
   const [showAdv, setShowAdv]     = useState(false);
 
-  // Portfolio state
-  const [assets, setAssets] = useState<Asset[]>([
-    { id: '1', name: 'S&P 500 ETF', amount: 10_000, annual: 10 },
-    { id: '2', name: 'Bonds',       amount: 5_000,  annual: 4  },
-    { id: '3', name: 'Gold',        amount: 3_000,  annual: 3  },
-  ]);
+  // Portfolio state — loaded from localStorage on first render
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [newName,   setNewName]   = useState('');
   const [newAmt,    setNewAmt]    = useState('');
   const [newRet,    setNewRet]    = useState('');
 
   const [copied,  setCopied]  = useState(false);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+
+  // Hydrate from localStorage once on mount
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem('investcalc_portfolio');
+      if (saved) {
+        setAssets(JSON.parse(saved));
+      } else {
+        // Default demo assets for first-time visitors
+        setAssets([
+          { id: '1', name: 'S&P 500 ETF', amount: 10_000, annual: 10 },
+          { id: '2', name: 'Bonds',       amount: 5_000,  annual: 4  },
+          { id: '3', name: 'Gold',        amount: 3_000,  annual: 3  },
+        ]);
+      }
+    } catch (_) {
+      setAssets([]);
+    }
+  }, []);
+
+  // Persist to localStorage whenever assets change (skip the empty initial state)
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      localStorage.setItem('investcalc_portfolio', JSON.stringify(assets));
+    } catch (_) { /* storage full or unavailable */ }
+  }, [assets, mounted]);
 
   // Core calc
   const data = useMemo(
