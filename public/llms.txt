@@ -1,0 +1,104 @@
+# InvestCalc — LLM Context
+
+## What this is
+A free, client-side Investment Returns Calculator and Portfolio Tracker built with Next.js 16, React 19, Tailwind CSS v4, and Recharts. Deployed on Vercel at https://investment-calculator-three-pi.vercel.app.
+
+## Purpose
+Help users of all ages understand how their money grows over time through compound interest, visualise investment growth, compare scenarios, and track a personal portfolio of assets.
+
+## Features
+
+### Investment Calculator
+- Four core inputs: initial investment, monthly contribution, annual return rate, investment duration (years).
+- All inputs are typeable number fields synced with range sliders — users can type exact values or drag.
+- Live recalculation on every change (no submit button needed).
+- Results: final portfolio value, total invested, total profit, return multiple, estimated CAGR, Rule of 72.
+- A progress bar shows the split between invested capital and profit visually.
+
+### Advanced Options (collapsible)
+- Compound frequency: Monthly, Quarterly, Semi-Annual, Annual.
+- Inflation adjustment — deflates the final value to today's purchasing power.
+- Tax rate on gains — reduces the effective annual return.
+
+### Growth Chart
+- Recharts AreaChart showing portfolio value vs. amount invested over time.
+- Two series: "Portfolio value" (indigo area) and "Amount invested" (dashed grey area).
+- Interactive tooltip showing exact values per year.
+
+### What If? Comparison
+- Three scenarios shown side by side: start 5 years earlier, current plan, start 5 years later.
+- Each shows the final value and the dollar difference vs. the current plan.
+- Helps users understand the cost of delaying investment.
+
+### Portfolio Tracker
+- Add multiple assets with name, amount owned, and expected annual return.
+- Each asset is displayed as a card showing: amount owned, growth rate per year, and projected value in 10 years.
+- Always-visible Remove button per card (no hover required — accessible for all ages and touch devices).
+- Donut chart at the top of the section shows allocation breakdown with progress-bar legend.
+- Total portfolio value shown prominently.
+- Add form uses plain-English labels with inline $ and % symbols and benchmark hints (S&P 500 ≈ 10%, Bonds ≈ 4%).
+
+### Monetisation
+- Google AdSense (publisher ID: ca-pub-2607428575036247) with three ad placements: after the growth chart, after the comparison section, and after the portfolio tracker.
+- ads.txt at the site root for publisher verification.
+
+### SEO Content
+- Educational section explaining compound interest, the formula, why starting early matters, and investment strategies.
+- H1: "Investment Calculator", subheadings: "Compound Interest Calculator", "How compound interest works".
+
+## Formula used
+```
+FV = P(1 + r/n)^(nt) + PMT × [(1 + r/n)^(nt) − 1] / (r/n)
+```
+Where P = principal, r = after-tax annual rate, n = compound frequency, t = years, PMT = monthly contribution.
+Effective monthly rate = (1 + r/n)^(n/12) − 1 (converts any compound frequency to monthly for calculation).
+
+## Tech stack
+- **Framework**: Next.js 16.2.4 (App Router, static export)
+- **UI library**: React 19
+- **Styling**: Tailwind CSS v4 (CSS-first config, no tailwind.config.ts)
+- **Charts**: Recharts 3
+- **Font**: Geist + Geist Mono (next/font/google)
+- **Language**: TypeScript 5
+- **Deployment**: Vercel (auto-deploy on push to main via GitHub Actions)
+
+## File structure
+```
+app/
+  layout.tsx     — root layout, metadata, AdSense Script tag
+  page.tsx       — entire app (single page, all components defined inline)
+  globals.css    — Tailwind import, custom range slider styles, scrollbar
+public/
+  ads.txt        — Google AdSense publisher verification
+  llms.txt       — this file
+.github/
+  workflows/
+    deploy.yml   — GitHub Actions: deploy to Vercel on push to main
+```
+
+## Architecture decisions
+- **Single-file component**: All sub-components (Field, AdBlock, Page) live in `app/page.tsx` for simplicity. No separate component files.
+- **Client component**: The entire page is `'use client'` because of sliders, state, and Recharts (which uses DOM APIs).
+- **Mounted guard**: `const [mounted, setMounted] = useState(false)` + `useEffect(() => setMounted(true), [])` prevents Recharts SSR hydration mismatches.
+- **No external state library**: All state is React `useState` + `useMemo`. No Redux, Zustand, or Context.
+- **No database**: All data is ephemeral (in-memory React state). Portfolio data is not persisted between sessions.
+- **Static generation**: Next.js statically renders the page at build time (○ Static in build output).
+
+## Design
+- Dark premium theme — background #0b0f1a, card #131929.
+- Accent colour: indigo (#6366f1 / #818cf8).
+- Profit/gains: emerald green (#34d399).
+- Projected values: amber/gold (#fbbf24).
+- Max content width: 3xl (768px) — narrow for readability on all screen sizes.
+- Mobile-first: all inputs are large touch targets, form fields stack on mobile.
+
+## CI/CD
+- GitHub repo: https://github.com/tcjonytap-ship-it/investment
+- Every push to `main` triggers GitHub Actions → `vercel deploy --prod`.
+- Required secrets: VERCEL_TOKEN, VERCEL_ORG_ID (team_0vkLI6tBVdAW34JdrKMiqLGA), VERCEL_PROJECT_ID (prj_Jl9BoKFDz64LBr1GDPIsaApGsWmn).
+
+## What this is NOT
+- Not a financial advisor — all results are for educational purposes only.
+- Not connected to any live market data or APIs.
+- Not collecting user data — no analytics, no cookies, no tracking beyond AdSense.
+- Not using a database — portfolio data resets on page refresh.
